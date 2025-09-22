@@ -20,12 +20,15 @@ app.use("/public/uploads", express.static("public/uploads"))
 app.use('/api/v1/users', userRouter);
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/posts', postRouter);
+app.get('/', (req, res) => {
+    res.send('Hello World!');
+})
 
 app.use(errorHandler)
 
-app.listen(3000, () => {
-    console.log("App running on http://localhost:3000")
-})
+// app.listen(3000, () => {
+//     console.log("App running on http://localhost:3000")
+// })
 
 export default app;
 
