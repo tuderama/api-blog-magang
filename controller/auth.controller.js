@@ -42,7 +42,7 @@ export const signIn = async (req, res, next) => {
     }
 }
 
-export const refreshToken = async (req, res) => {
+export const refreshToken = async (req, res, next) => {
     try {
         const refreshToken = req.cookies?.refresh_token;
         if (!refreshToken) throw new ErrorResponse("Unauthorize", 401);
