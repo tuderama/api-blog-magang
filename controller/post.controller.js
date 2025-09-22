@@ -79,8 +79,7 @@ export const createPost = async (req, res, next) => {
         if (!image.buffer) throw new ErrorResponse("Upload gagal: buffer kosong", 400);
 
         const safe = image.originalname.replace(/[^\w.\-]+/g, "_");
-        const day = new Date().toISOString().slice(0, 10); // yyyy-mm-dd
-        const key = `uploads/${day}/${Date.now()}-${safe}`;
+        const key = `uploads/${Date.now()}-${safe}`;
 
         const {url} = await put(key, image.buffer, {
             access: "public",
@@ -119,8 +118,7 @@ export const updatePost = async (req, res, next) => {
         if (!image.buffer) throw new ErrorResponse("Upload gagal: buffer kosong", 400);
 
         const safe = image.originalname.replace(/[^\w.\-]+/g, "_");
-        const day = new Date().toISOString().slice(0, 10); // yyyy-mm-dd
-        const key = `uploads/${day}/${Date.now()}-${safe}`;
+        const key = `uploads/${Date.now()}-${safe}`;
 
         const {url} = await put(key, image.buffer, {
             access: "public",
