@@ -5,9 +5,13 @@ import cookieParser from "cookie-parser";
 import {postRouter} from "./routes/post.route.js";
 import {errorHandler} from "./middleware/errorHandler.middleware.js";
 import "express-async-errors";
+import cors from "cors"
 
 const app = express()
 
+app.use(cors({
+    origin: "*",
+}));
 app.use(express.json())
 app.use(cookieParser())
 app.use(express.urlencoded({extended: false}))
@@ -22,5 +26,7 @@ app.use(errorHandler)
 app.listen(3000, () => {
     console.log("App running on http://localhost:3000")
 })
+
+export default app;
 
 
