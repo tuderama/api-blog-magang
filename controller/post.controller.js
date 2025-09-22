@@ -35,7 +35,7 @@ export const getPosts = async (req, res, next) => {
                 orderBy: {createdAt: "desc"},
                 skip,
                 take: limit,
-                select: {title: true, content: true, imagePath: true, createdAt: true}
+                select: {id: true, title: true, content: true, imagePath: true, createdAt: true}
             }),
             prisma.post.count({where})
         ])
