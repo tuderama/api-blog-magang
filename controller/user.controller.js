@@ -64,7 +64,7 @@ export const updatePassword = async (req, res, next) => {
         const matchPassword = await bcrypt.compare(currentPassword, user.password)
         if (!matchPassword) throw new ErrorResponse("Password salah", 401);
 
-        if (!newPassword !== confirmPassword) throw new ErrorResponse("Konfirmasi password harus sama dengan password baru", 401);
+        if (newPassword !== confirmPassword) throw new ErrorResponse("Konfirmasi password harus sama dengan password baru", 401);
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
         if (!passwordRegex.test(newPassword)) throw new ErrorResponse("Password minimal 8 karakter, harus mengandung huruf besar, huruf kecil, angka, dan simbol", 400);
         const hashPassword = await bcrypt.hash(newPassword, 12);
