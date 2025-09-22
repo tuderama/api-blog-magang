@@ -3,7 +3,6 @@ import path from "path";
 import fs from "fs";
 import {ErrorResponse} from "../utils/errorResponse.js";
 
-if (!fs.existsSync("public/uploads")) fs.mkdirSync("public/uploads");
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, "public/uploads")
