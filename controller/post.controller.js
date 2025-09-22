@@ -1,6 +1,5 @@
 import {PrismaClient} from "@prisma/client";
-import fs from "fs/promises";
-import path from "path";
+import {put, del} from "@vercel/blob";
 import {ErrorResponse} from "../utils/errorResponse.js";
 
 const prisma = new PrismaClient()
@@ -77,10 +76,19 @@ export const createPost = async (req, res, next) => {
         if (!title || title.trim() === "") throw new ErrorResponse("Judul wajib di isi", 400);
         if (!content || content.trim() === "") throw new ErrorResponse("Isi wajib di isi", 400);
         if (!image) throw new ErrorResponse("Gambar wajib di isi", 400);
-        const imagePath = `/public/uploads/${image.filename}`;
+        if (!image.buffer) throw new ErrorResponse("Upload gagal: buffer kosong", 400);
+
+        const safe = image.originalname.replace(/[^\w.\-]+/g, "_");
+        const day = new Date().toISOString().slice(0, 10); // yyyy-mm-dd
+        const key = `uploads/${day}/${Date.now()}-${safe}`;
+
+        const {url} = await put(key, image.buffer, {
+            access: "public",
+            contentType: image.mimetype,
+        });
 
         const post = await prisma.post.create({
-            data: {title, content, authorId, imagePath},
+            data: {title, content, authorId, imagePath: url},
         });
 
         return res.status(201).json({
@@ -90,14 +98,6 @@ export const createPost = async (req, res, next) => {
             data: post,
         });
     } catch (error) {
-        if (req.file) {
-            try {
-                await fs.unlink(path.join("public/uploads", req.file.filename));
-                console.error("Berhasil hapus file")
-            } catch (err) {
-                console.log("Gagal hapus file:", err);
-            }
-        }
         next(error)
     }
 };
@@ -116,30 +116,29 @@ export const updatePost = async (req, res, next) => {
         if (!content || content.trim() === "") throw new ErrorResponse("Isi wajib di isi", 400);
 
         if (req.user?.id && post.authorId !== req.user.id) throw new ErrorResponse("Unauthorize", 401);
-        let oldImagePath = post.imagePath
-        const newImagePath = `/public/uploads/${image.filename}`;
-        if (image) {
-            if (newImagePath !== oldImagePath) {
-                try {
-                    const absoluteOldPath = path.join(process.cwd(), oldImagePath.replace(/^\/+/, ""));
-                    await fs.unlink(absoluteOldPath);
-                } catch (error) {
-                    if (error.code === "ENOENT") throw new ErrorResponse("Gagal hapsu file", 400);
-                }
+        if (!image.buffer) throw new ErrorResponse("Upload gagal: buffer kosong", 400);
+
+        const safe = image.originalname.replace(/[^\w.\-]+/g, "_");
+        const day = new Date().toISOString().slice(0, 10); // yyyy-mm-dd
+        const key = `uploads/${day}/${Date.now()}-${safe}`;
+
+        const {url} = await put(key, image.buffer, {
+            access: "public",
+            contentType: image.mimetype,
+        });
+
+        const updatePost = await prisma.post.update({where: {id}, data: {title, content, imagePath: url}})
+
+        if (post.imagePath && /^https?:\/\//i.test(post.imagePath) && post.imagePath !== url) {
+            try {
+                await del(post.imagePath);
+            } catch (error) {
+                console.log("Gagal hapus file", error)
             }
         }
 
-        const updatePost = await prisma.post.update({where: {id}, data: {title, content, imagePath: newImagePath}})
         return res.status(200).json({status: "success", code: 200, message: "Berhasil mengupdate post"});
     } catch (error) {
-        if (req.file) {
-            try {
-                await fs.unlink(path.join("public/uploads", req.file.filename));
-                console.error("Berhasil hapus file")
-            } catch (error) {
-                console.log("Gagal hapus file:", error);
-            }
-        }
         next(error)
     }
 }
@@ -152,8 +151,7 @@ export const deletePost = async (req, res, next) => {
         await prisma.post.delete({where: {id}});
         if (post.imagePath) {
             try {
-                await fs.unlink(path.join(process.cwd(), post.imagePath.replace(/^\/+/, "")))
-                console.log("Berhasil menghapus file")
+                await del(post.imagePath);
             } catch (error) {
                 console.log("Gagal hapus file", error)
             }
